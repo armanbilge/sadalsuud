@@ -28,9 +28,7 @@ object TruncatedGumbel:
     tc.truncatedGumbel(location, truncation)
 
   given [F[_]: Functor](using Exponential[F, Double]): TruncatedGumbel[F, Double] with
-    private final val EulerConstant = 0.5772156649015329
     def truncatedGumbel(location: Double, truncation: Double): F[Double] =
       Exponential.standard.map { expo =>
-        val shiftedLocation = location - EulerConstant
-        shiftedLocation - Math.log(Math.exp(shiftedLocation - truncation) + expo)
+        location - Math.log(Math.exp(location - truncation) + expo)
       }
