@@ -13,6 +13,7 @@ ThisBuild / crossScalaVersions := Seq(Scala3)
 
 val CatsVersion = "2.8.0"
 val CatsEffectVersion = "3.3.14"
+val CatsCollectionsVersion = "0.9.5"
 val Fs2Version = "3.3.0"
 val SchrodingerVersion = "0.4-7c61f3e"
 val MunitVersion = "1.0.0-M6"
@@ -34,6 +35,7 @@ lazy val core = crossProject(JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-core" % CatsVersion,
       "org.typelevel" %%% "cats-effect" % CatsEffectVersion,
+      "org.typelevel" %%% "cats-collections-core" % CatsCollectionsVersion,
       "co.fs2" %%% "fs2-core" % Fs2Version,
       "com.armanbilge" %%% "schrodinger-monte-carlo" % SchrodingerVersion,
       "org.scalameta" %%% "munit-scalacheck" % MunitVersion % Test,
