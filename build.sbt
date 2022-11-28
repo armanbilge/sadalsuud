@@ -8,15 +8,15 @@ ThisBuild / startYear := Some(2022)
 ThisBuild / tlUntaggedAreSnapshots := false
 ThisBuild / tlSonatypeUseLegacyHost := false
 
-val Scala3 = "3.2.0"
+val Scala3 = "3.2.1"
 ThisBuild / crossScalaVersions := Seq(Scala3)
 
-val CatsVersion = "2.8.0"
-val CatsEffectVersion = "3.3.14"
+val CatsVersion = "2.9.0"
+val CatsEffectVersion = "3.4.1"
 val CatsCollectionsVersion = "0.9.5"
-val Fs2Version = "3.3.0"
-val SchrodingerVersion = "0.4-7c61f3e"
-val MunitVersion = "1.0.0-M6"
+val Fs2Version = "3.4.0"
+val SchrodingerVersion = "0.4-fb30534"
+val MunitVersion = "1.0.0-M7"
 val MunitCatsEffectVersion = "2.0.0-M3"
 
 ThisBuild / scalacOptions ++= Seq("-new-syntax", "-indent", "-source:future")
