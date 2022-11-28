@@ -18,6 +18,7 @@ package sadalsuud
 
 import algebra.ring.MultiplicativeSemigroup
 import cats.collections.Heap
+import cats.data.NonEmptyList
 import cats.kernel.Order
 import fs2.Pull
 import fs2.Stream
@@ -32,7 +33,7 @@ object AStarSampler:
 
   trait Target[F[_], W, S, A]:
     def density(a: A): F[W]
-    def split(subset: S, bound: W): F[List[(S, W)]]
+    def split(subset: S, bound: W): F[NonEmptyList[(S, W)]]
 
   def apply[F[_], W, S, A](
       proposal: Proposal[F, W, S, A],
