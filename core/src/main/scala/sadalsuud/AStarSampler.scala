@@ -47,10 +47,10 @@ object AStarSampler:
       Order[R],
   ): Stream[F, Weighted[W, A]] =
 
-    case class UpperBound(gumbel: R, bound: R, subset: S)
+    final case class UpperBound(gumbel: R, bound: R, subset: S)
     given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel + ub.bound))
 
-    case class LowerBound(bound: R, sample: Weighted[W, A])
+    final case class LowerBound(bound: R, sample: Weighted[W, A])
     given Order[LowerBound] = Order.reverse(Order.by(_.bound))
 
     def go(
