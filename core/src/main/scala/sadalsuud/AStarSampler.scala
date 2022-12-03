@@ -16,13 +16,14 @@
 
 package sadalsuud
 
-import algebra.ring.MultiplicativeSemigroup
+import algebra.ring.AdditiveSemigroup
 import cats.collections.Heap
 import cats.data.NonEmptyList
 import cats.kernel.Order
 import fs2.Pull
 import fs2.Stream
 import schrodinger.kernel.Gumbel
+import schrodinger.math.Logarithmic
 import schrodinger.math.syntax.*
 import schrodinger.montecarlo.Weighted
 
@@ -35,20 +36,21 @@ object AStarSampler:
     def density(a: A): F[W]
     def split(subset: S, bound: W): F[NonEmptyList[(S, W)]]
 
-  def apply[F[_], W, S, A](
+  def apply[F[_], R, W, S, A](
       proposal: Proposal[F, W, S, A],
       target: Target[F, W, S, A],
   )(using
-      Gumbel[F, W],
-      TruncatedGumbel[F, W],
-      MultiplicativeSemigroup[W],
-      Order[W],
+      Logarithmic[R, W],
+      Gumbel[F, R],
+      TruncatedGumbel[F, R],
+      AdditiveSemigroup[R],
+      Order[R],
   ): Stream[F, Weighted[W, A]] =
 
-    case class UpperBound(gumbel: W, bound: W, subset: S)
-    given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel * ub.bound))
+    case class UpperBound(gumbel: R, bound: R, subset: S)
+    given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel + ub.bound))
 
-    case class LowerBound(bound: W, sample: Weighted[W, A])
+    case class LowerBound(bound: R, sample: Weighted[W, A])
     given Order[LowerBound] = Order.reverse(Order.by(_.bound))
 
     def go(
