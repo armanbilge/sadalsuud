@@ -36,22 +36,22 @@ object AStarSampler:
     def density(a: A): F[W]
     def split(subset: S, bound: W): F[NonEmptyList[(S, W)]]
 
-  def apply[F[_], R, W, S, A](
+  def apply[F[_], G, W, S, A](
       proposal: Proposal[F, W, S, A],
       target: Target[F, W, S, A],
   )(using
-      Logarithmic[R, W],
-      Gumbel[F, R],
-      TruncatedGumbel[F, R],
-      AdditiveSemigroup[R],
-      Order[R],
+      Logarithmic[G, W],
+      Gumbel[F, G],
+      TruncatedGumbel[F, G],
+      AdditiveSemigroup[G],
+      Order[G],
   ): Stream[F, Weighted[W, A]] =
 
-    final case class UpperBound(gumbel: R, bound: R, subset: S)
-    given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel + ub.bound))
+    final case class UpperBound(value: G, gumbel: G, subset: S)
+    given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel + ub.value))
 
-    final case class LowerBound(bound: R, sample: Weighted[W, A])
-    given Order[LowerBound] = Order.reverse(Order.by(_.bound))
+    final case class LowerBound(value: G, sample: Weighted[W, A])
+    given Order[LowerBound] = Order.reverse(Order.by(_.value))
 
     def go(
         upperBounds: Heap[UpperBound],
