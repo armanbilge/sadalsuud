@@ -67,11 +67,11 @@ object AStarSampler:
     def go(
         upperBounds0: Heap[UpperBound],
         lowerBounds0: Heap[LowerBound],
-    ): Pull[F, A, Unit] =
+    ): Pull[F, (A, G), Unit] =
 
       val (UpperBound(gumbel, bound, subset, volume), upperBounds) = upperBounds0.pop.get
 
-      for
+      val updateBounds = for
         X <- sample(subset)
         oX <- perturb(X)
         lowerBounds = lowerBounds0.add(LowerBound(gumbel + oX.toLinear, X))
@@ -86,10 +86,39 @@ object AStarSampler:
               subsets <- split(subset, ???)
               volumes <- subsets.traverse((s, _) => measure(s))
               heir <- Categorical(volumes)
-            yield ()
-          else upperBounds.add(UpperBound(gumbel, bound, subset, volume)).pure
-      yield ()
+              upperBounds <-
+                def go(
+                    upperbounds: Heap[UpperBound],
+                    subsets: List[(S, P)],
+                    volumes: List[P],
+                    index: Long,
+                ): F[Heap[UpperBound]] =
+                  (subsets, volumes) match
+                    case ((subset, bound) :: subsets, volume :: volumes) =>
+                      (if index == heir then gumbel.pure
+                       else TruncatedGumbel(volume.toLinear, gumbel)).flatMap { gumbel =>
+                        val upperBound = UpperBound(gumbel, bound, subset, volume)
+                        go(
+                          upperBounds.add(upperBound),
+                          subsets,
+                          volumes,
+                          index + 1,
+                        )
+                      }
 
-      ???
+                    case _ => upperBounds.pure
+
+                go(upperBounds, subsets.toList, volumes.toList, 0)
+            yield upperBounds
+          else upperBounds.add(UpperBound(gumbel, bound, subset, volume)).pure
+      yield (upperBounds, lowerBounds)
+
+      Pull.eval(updateBounds).flatMap { (upperBounds, lowerBounds0) =>
+        val (LowerBound(value, sample), lowerBounds) = lowerBounds0.pop.get
+
+        if value >= upperBounds.getMin.get.value then
+          Pull.output1(sample -> value) >> go(upperBounds, lowerBounds)
+        else go(upperBounds, lowerBounds0)
+      }
 
     ???
