@@ -16,46 +16,80 @@
 
 package sadalsuud
 
-import algebra.ring.AdditiveSemigroup
+import algebra.ring.AdditiveMonoid
+import cats.Monad
 import cats.collections.Heap
 import cats.data.NonEmptyList
 import cats.kernel.Order
+import cats.syntax.all.*
 import fs2.Pull
 import fs2.Stream
+import schrodinger.kernel.Categorical
 import schrodinger.kernel.Gumbel
 import schrodinger.math.Logarithmic
 import schrodinger.math.syntax.*
 
 object AStarSampler:
-  trait Proposal[F[_], W, S, A]:
-    def sample: F[A]
-    def measure(subset: S): F[W]
+  trait Proposal[F[_], P, S, A]:
+    def sample(subset: S): F[A]
+    def measure(subset: S): F[P]
+    def support: S
 
-  trait Perturbation[F[_], W, S, A]:
-    def perturb(a: A): F[W]
-    def split(subset: S, bound: W): F[NonEmptyList[(S, W)]]
+  trait Perturbation[F[_], P, S, A]:
+    def perturb(a: A): F[P]
+    def split(subset: S, bound: P): F[NonEmptyList[(S, P)]]
 
-  def apply[F[_], G, W, S, A](
-      proposal: Proposal[F, W, S, A],
-      perturbation: Perturbation[F, W, S, A],
+  def apply[F[_], G, P, S, A](
+      proposal: Proposal[F, P, S, A],
+      perturbation: Perturbation[F, P, S, A],
   )(using
-      Logarithmic[G, W],
+      Monad[F],
+      Logarithmic[G, P],
+      AdditiveMonoid[P],
+      Categorical[F, NonEmptyList[P], Long],
       Gumbel[F, G],
       TruncatedGumbel[F, G],
-      AdditiveSemigroup[G],
+      AdditiveMonoid[G],
       Order[G],
   ): Stream[F, (A, G)] =
 
-    final case class UpperBound(value: G, gumbel: G, subset: S)
-    given Order[UpperBound] = Order.reverse(Order.by(ub => ub.gumbel + ub.value))
+    import proposal.*
+    import perturbation.*
+
+    final case class UpperBound(gumbel: G, bound: P, subset: S, volume: P) {
+      val value: G = gumbel + bound.toLinear
+    }
+    given Order[UpperBound] = Order.reverse(Order.by(_.value))
 
     final case class LowerBound(value: G, sample: A)
     given Order[LowerBound] = Order.reverse(Order.by(_.value))
 
     def go(
-        upperBounds: Heap[UpperBound],
-        lowerBounds: Heap[LowerBound],
+        upperBounds0: Heap[UpperBound],
+        lowerBounds0: Heap[LowerBound],
     ): Pull[F, A, Unit] =
+
+      val (UpperBound(gumbel, bound, subset, volume), upperBounds) = upperBounds0.pop.get
+
+      for
+        X <- sample(subset)
+        oX <- perturb(X)
+        lowerBounds = lowerBounds0.add(LowerBound(gumbel + oX.toLinear, X))
+
+        gumbel <- TruncatedGumbel(volume.toLinear, gumbel)
+        shouldSplit = lowerBounds.getMin.get.value <
+          Order[G].max(gumbel + bound.toLinear, upperBounds.getMin.get.value)
+
+        upperBounds <-
+          if shouldSplit then
+            for
+              subsets <- split(subset, ???)
+              volumes <- subsets.traverse((s, _) => measure(s))
+              heir <- Categorical(volumes)
+            yield ()
+          else upperBounds.add(UpperBound(gumbel, bound, subset, volume)).pure
+      yield ()
+
       ???
 
     ???
