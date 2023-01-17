@@ -13,7 +13,7 @@ ThisBuild / crossScalaVersions := Seq(Scala3)
 
 val CatsVersion = "2.9.0"
 val CatsEffectVersion = "3.4.5"
-val Fs2Version = "3.4.0"
+val Fs2Version = "3.5.0"
 val SchrodingerVersion = "0.4-fb30534"
 val MunitVersion = "1.0.0-M7"
 val MunitCatsEffectVersion = "2.0.0-M3"
