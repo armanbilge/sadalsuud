@@ -16,7 +16,7 @@ val CatsEffectVersion = "3.4.6"
 val Fs2Version = "3.5.0"
 val SchrodingerVersion = "0.4-fb30534"
 val MunitVersion = "1.0.0-M7"
-val MunitCatsEffectVersion = "2.0.0-M3"
+val MunitCatsEffectVersion = "2.0.0-M4"
 
 ThisBuild / scalacOptions ++= Seq("-new-syntax", "-indent", "-source:future")
 ThisBuild / Test / testOptions += Tests.Argument("+l")
